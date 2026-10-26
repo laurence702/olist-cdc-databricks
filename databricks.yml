@@ -1,0 +1,38 @@
+bundle:
+  name: olist_cdc
+
+include:
+  - resources/*.yml
+
+artifacts:
+  default:
+    type: whl
+    build: .venv/bin/python -m pip wheel . --wheel-dir dist --no-deps --no-build-isolation
+    path: .
+
+variables:
+  catalog:
+    description: Unity Catalog catalog that owns CDC tables.
+    default: main
+  schema:
+    description: Schema for bronze, silver, gold, and control tables.
+    default: olist_cdc_dev
+  postgres_secret_scope:
+    description: Secret scope containing host, port, database, user, and password.
+  postgres_secret_prefix:
+    description: Prefix for PostgreSQL secrets (for example, olist_).
+    default: olist_
+  source_tables:
+    description: Comma-separated source tables, each with an updated_at column.
+    default: customers,orders,order_items,order_payments,products,sellers,geolocation,order_reviews
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/.bundle/${bundle.name}/${bundle.target}
