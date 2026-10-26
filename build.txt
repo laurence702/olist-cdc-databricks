@@ -1,0 +1,36 @@
+Build an incremental batch ELT pipeline using watermark based CDC to extract order lifecycle changes from Postgres into Snowflake, modeled a star schema with SCD Type 2 customer dimensions and data quality tests across 13 dbt models, orchestrated end to end with Airflow.
+
+Modern data stack ELT Pipeline: Shopify E-Commerce Olist store Postgres · Python · AWS S3 · Snowflake · dbt · Airflow · docker
+
+Built an incremental batch ELT pipeline using watermark-based CDC to extract order lifecycle changes from Postgres into Snowflake, modeled a star schema with SCD Type 2 customer dimensions and data quality tests across 13 dbt models, orchestrated end-to-end with Airflow.
+
+Summary:
+
+This project covers the change data capture pipeline, uses dbt, uses AWS and uses snowflake with logging, data quality, orchestration, backfilling, idempotency allowing for good storytelling on interviews
+
+Postgres · Python · AWS S3 · Snowflake · dbt · Airflow
+
+
+Pipeline — watermark-based CDC extracts row-level changes from a Postgres transactional source on a daily schedule, landing incremental Parquet files in AWS S3 partitioned by table and extraction timestamp, loaded into Snowflake via COPY INTO across raw, staging, and mart layers
+
+Data modeling — star schema with SCD Type 2 on dim_customers tracking city and tier changes over time; fact table joins preserve historical dimension state at time of transaction; dbt snapshots manage valid_from, valid_to versioning automatically
+
+Idempotency — watermark only advances after successful S3 upload; COPY INTO skips already-loaded files by default; dbt incremental models use unique_key merge so every layer can be safely rerun without duplicating data
+
+Logging — Python CDC script logs extraction counts, watermark state, and S3 upload confirmation to both terminal and file; Airflow captures task-level stdout and stderr per run with full retry history visible in the UI
+
+
+Orchestration — five-task Airflow DAG with explicit dependencies gates each step on upstream success; task-level retries with 5-minute backoff; dbt test failure stops the snapshot from running so broken data never gets versioned into SCD Type 2 history
+
+Replay — truncating the watermark table resets CDC to epoch and re-extracts full history; COPY INTO reloads from S3 without re-running CDC; dbt can rebuild all models from raw with a single dbt run --full-refresh
+
+Scale choices — watermark-based CDC chosen over log-based (Debezium) for simplicity at this data volume; Snowflake auto-scaling warehouse suspends after 60 seconds of inactivity to minimize cost; Parquet chosen over CSV for columnar compression and schema enforcement at the S3 landing layer; in production log-based CDC via Debezium would replace the watermark script to capture deletes and eliminate dependency on updated_at columns
+
+Data volume — designed for a hypothetical production workload of 500K+ daily order events across 9 source tables; incremental extraction processes only changed rows per run averaging 2-5% of total dataset size; full historical load on first run bootstraps the warehouse before switching to incremental mode
+
+Data quality — 7 dbt schema tests covering uniqueness and not_null on primary keys across all three staging models; test failures surface in Airflow logs and block downstream snapshot execution; severity configured to warn on known upstream duplicates rather than halt the pipeline
+
+SCD Type 2 — dbt snapshot on dim_customers detects updated_at changes and inserts new dimension rows with valid_from and valid_to timestamps; historical fact table joins resolve to the correct dimension version at time of order rather than current state
+
+
+Olist — the real dataset. Downloaded from Kaggle (kaggle.com/datasets/olistbr/brazilian-ecommerce). Nine CSV files covering real orders, customers, products, sellers, payments, and reviews from a Brazilian e-commerce platform between 2016 and 2018. 112K orders, 99K customers, 33K products. This is real operational data released publicly by Olist.
