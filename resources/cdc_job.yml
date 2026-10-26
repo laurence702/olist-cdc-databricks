@@ -1,0 +1,39 @@
+resources:
+  jobs:
+    olist_cdc_job:
+      name: olist-cdc-${bundle.target}
+      max_concurrent_runs: 1
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+        - name: schema
+          default: ${var.schema}
+        - name: secret_scope
+          default: ${var.postgres_secret_scope}
+        - name: secret_prefix
+          default: ${var.postgres_secret_prefix}
+        - name: source_tables
+          default: ${var.source_tables}
+        - name: lookback_minutes
+          default: "5"
+      tasks:
+        - task_key: extract_and_merge
+          # Databricks Free Edition is serverless-only. Python wheel tasks need
+          # an explicit environment when they run on serverless compute.
+          environment_key: default
+          python_wheel_task:
+            package_name: olist_cdc_databricks
+            entry_point: cdc-run
+            named_parameters:
+              catalog: "{{job.parameters.catalog}}"
+              schema: "{{job.parameters.schema}}"
+              secret-scope: "{{job.parameters.secret_scope}}"
+              secret-prefix: "{{job.parameters.secret_prefix}}"
+              source-tables: "{{job.parameters.source_tables}}"
+              lookback-minutes: "{{job.parameters.lookback_minutes}}"
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "5"
+            dependencies:
+              - ../dist/*.whl
