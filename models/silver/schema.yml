@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: silver_customers
+    description: "Curated silver customer table deduplicated to the latest version per customer_id."
+    columns:
+      - name: customer_id
+        description: "Primary key for customer entity."
+        tests:
+          - unique
+          - not_null
+      - name: customer_unique_id
+        tests:
+          - not_null
+      - name: updated_at
+        description: "Timestamp of the latest update from source database."
+        tests:
+          - not_null
+
+  - name: silver_orders
+    description: "Curated silver order table deduplicated to the latest version per order_id."
+    columns:
+      - name: order_id
+        description: "Primary key for order entity."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "Foreign key referencing customer entity."
+        tests:
+          - not_null
+      - name: order_status
+        description: "Current lifecycle status of the order."
+        tests:
+          - not_null
+      - name: updated_at
+        description: "Timestamp of the latest update from source database."
+        tests:
+          - not_null
