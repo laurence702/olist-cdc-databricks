@@ -1,0 +1,20 @@
+name: 'olist_cdc'
+version: '1.0.0'
+config-version: 2
+
+profile: 'cdc-dev'
+
+model-paths: ["models"]
+test-paths: ["tests/dbt"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  olist_cdc:
+    silver:
+      +materialized: table
+      +file_format: delta
