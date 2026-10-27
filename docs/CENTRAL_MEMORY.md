@@ -44,9 +44,18 @@
 - Incremental proof: `public.orders.order_001` set to `order_status='cdc_demo_updated'` with fresh UTC `updated_at` (12:07:27Z). Rerun 77809525088403 succeeded. Orders bronze Delta v2 MERGE inserted exactly 1 row (4 rows, 3 distinct ids; the old and new versions of order_001 coexist, so bronze is a change history, silver must pick the latest per key). Customers v2 MERGE inserted 0 rows, so the 5-minute replay overlap was deduplicated by content hash. Orders watermark advanced to 2026-10-26T12:07:27.145Z.
 - SQL Warehouse for verification: Serverless Starter Warehouse (`7b448eb5dc1a3a02`), queried via the SQL statements API using the `cdc-dev` profile.
 
+### 2026-10-27 — Silver layer with dbt-databricks (complete)
+
+- Installed `dbt-databricks` in `.venv`.
+- Configured `dbt_project.yml` and `profiles.yml` connecting via the Databricks CLI OAuth profile `cdc-dev`, targeting catalog `workspace`, schema `olist_cdc_dev`, and SQL warehouse `7b448eb5dc1a3a02`.
+- Implemented `silver_customers` and `silver_orders` models deduplicating bronze records to the single latest row per key (`customer_id`, `order_id`) ordered by `updated_at DESC, _cdc_ingested_at DESC`.
+- Added generic tests (`unique`, `not_null`) and singular reconciliation tests (`assert_silver_customers_matches_distinct_bronze`, `assert_silver_orders_matches_distinct_bronze`, `assert_silver_orders_latest_status_preserved`).
+- Ran `dbt build`: 2 models and 12 tests passed (14/14 green). Verified `order_001` retains latest status `cdc_demo_updated`.
+
 ### Next actions (start here)
 
-1. Build silver models (dbt): dedupe bronze to latest row per primary key (`customer_id`, `order_id`) by `updated_at`.
-2. Build gold marts; add a schedule to `olist_cdc_job` (paused by default in dev).
+1. Build gold marts (daily orders aggregate, customer revenue lifetime value).
+2. Add a schedule to `olist_cdc_job` (paused by default in dev).
 3. Add the remaining Olist source tables to `source_tables` and Lakebase.
 4. Consider a delete strategy (soft-delete flag), since `updated_at` polling cannot see hard deletes.
+

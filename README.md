@@ -45,6 +45,33 @@ For production, review the compute policy, set a production catalog/schema, then
 - **Inspect progress:** query `<catalog>.<schema>.cdc_watermarks` and the job run log.
 - **Backfill safely:** run a separate catalog/schema first, validate counts and maximum `updated_at`, then promote downstream consumers.
 
-## Next implementation slice
+## Silver Layer & Transformations (dbt-databricks)
 
-Build silver deduplication and dbt models (including SCD Type 2 customers and order facts) after confirming the actual PostgreSQL table schemas and primary keys. They cannot be safely inferred from the high-level brief alone.
+The bronze tables retain the raw CDC stream, where repeated updates create multiple rows per primary key (for example, `order_001` holds both initial `approved` and later `cdc_demo_updated` rows).
+
+The silver layer transforms and conforms these streams into clean, current-state business entities:
+
+1. **Deduplication Strategy:** Each silver model computes a deterministic window rank:
+   ```sql
+   ROW_NUMBER() OVER (
+       PARTITION BY <primary_key>
+       ORDER BY updated_at DESC, _cdc_ingested_at DESC
+   )
+   ```
+   Filtering on `_row_num = 1` guarantees exactly one row per entity representing its latest state. The `_cdc_ingested_at` column acts as an immutable tiebreaker for updates arriving with identical timestamps.
+2. **Delta Lake Storage:** Silver models materialise as native Delta tables in Unity Catalog (`workspace.olist_cdc_dev`), providing ACID transactions, time travel, and file compaction.
+3. **Zero-Secret Authentication:** The dbt project authenticates via the Databricks CLI OAuth profile (`cdc-dev`) connecting to the Serverless SQL Warehouse (`7b448eb5dc1a3a02`). No static credentials, tokens, or passwords exist in repository files.
+
+### Running Silver Models
+
+```bash
+DATABRICKS_CONFIG_PROFILE=cdc-dev .venv/bin/dbt build --profiles-dir .
+```
+
+### Data Quality & Reconciliation Tests
+
+The test suite validates:
+- **Schema tests:** `unique` and `not_null` constraints on primary keys (`customer_id`, `order_id`) and critical audit columns (`updated_at`).
+- **Row count reconciliation:** Singular data tests assert that silver row counts match `COUNT(DISTINCT primary_key)` in bronze, proving that no records vanished during deduplication.
+- **State freshness:** Asserts that entity updates (such as `order_001` transitioning to `cdc_demo_updated`) correctly reflect the latest source state.
+
