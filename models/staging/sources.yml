@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: bronze
+    database: workspace
+    schema: olist_cdc_dev
+    tables:
+      - name: bronze_public_customers
+        description: "Append-only CDC bronze stream for PostgreSQL public.customers"
+      - name: bronze_public_orders
+        description: "Append-only CDC bronze stream for PostgreSQL public.orders"
