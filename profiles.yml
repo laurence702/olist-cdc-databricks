@@ -1,0 +1,11 @@
+cdc-dev:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: workspace
+      schema: olist_cdc_dev
+      host: dbc-2662b8bc-8bb0.cloud.databricks.com
+      http_path: /sql/1.0/warehouses/7b448eb5dc1a3a02
+      auth_type: oauth
+      threads: 4

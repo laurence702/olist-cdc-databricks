@@ -9,3 +9,8 @@ build/
 .DS_Store
 .env.*
 !.env.example
+target/
+dbt_packages/
+logs/
+.user.yml
+
