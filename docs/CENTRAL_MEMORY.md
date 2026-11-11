@@ -52,10 +52,18 @@
 - Added generic tests (`unique`, `not_null`) and singular reconciliation tests (`assert_silver_customers_matches_distinct_bronze`, `assert_silver_orders_matches_distinct_bronze`, `assert_silver_orders_latest_status_preserved`).
 - Ran `dbt build`: 2 models and 12 tests passed (14/14 green). Verified `order_001` retains latest status `cdc_demo_updated`.
 
+### 2026-11-11 — Social content alignment & Databricks CLI re-auth
+
+- Code audit for LinkedIn social publishing: clarified that the CDC project is Databricks-native watermark CDC with DABs, Delta Lake hash MERGE, and dbt deduplication (NOT Debezium/Kafka/WAL).
+- Git alignment: Fast-forwarded local branch `main` to `03d3ae0` (`agent/silver-dbt`). Next: Laurence to run `git push origin main`.
+- Databricks CLI: Authenticated via OAuth profile `cdc-dev` (`Valid: YES`). Ready to trigger fresh validation run.
+- Created central handoff file at `Keonix/_ops/handoffs/2026-11-11-cdc-lakehouse-handoff.md`.
+
 ### Next actions (start here)
 
-1. Build gold marts (daily orders aggregate, customer revenue lifetime value).
-2. Add a schedule to `olist_cdc_job` (paused by default in dev).
-3. Add the remaining Olist source tables to `source_tables` and Lakebase.
-4. Consider a delete strategy (soft-delete flag), since `updated_at` polling cannot see hard deletes.
+1. Push `main` to GitHub: `git push origin main`.
+2. Run fresh verification run via DAB:
+   `databricks bundle run olist_cdc_job --target dev --profile cdc-dev --var="postgres_secret_scope=olist_cdc" --var="catalog=workspace" --var="schema=olist_cdc_dev" --var="source_tables=public.customers,public.orders"`
+3. Update `README.md` with enriched Mermaid diagram and badges.
+4. Publish CDC LinkedIn post (Week 1).
 
