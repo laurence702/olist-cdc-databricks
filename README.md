@@ -4,6 +4,7 @@
 ![Delta Lake](https://img.shields.io/badge/Delta%20Lake-MERGE-00ADD4)
 ![dbt](https://img.shields.io/badge/dbt-databricks-FF694B?logo=dbt&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+[![license: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 An idempotent, watermark-based CDC pipeline that extracts PostgreSQL order-lifecycle changes into Unity Catalog Delta tables. It is deployed as a Databricks Declarative Automation Bundle (DAB) and intentionally uses a small overlap window (`updated_at >= watermark - 5 minutes`) so boundary records are replayed safely.
 
@@ -101,3 +102,7 @@ The test suite validates:
 - **Row count reconciliation:** Singular data tests assert that silver row counts match `COUNT(DISTINCT primary_key)` in bronze, proving that no records vanished during deduplication.
 - **State freshness:** Asserts that entity updates (such as `order_001` transitioning to `cdc_demo_updated`) correctly reflect the latest source state.
 
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
