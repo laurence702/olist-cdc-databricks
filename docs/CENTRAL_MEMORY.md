@@ -59,11 +59,20 @@
 - Databricks CLI: Authenticated via OAuth profile `cdc-dev` (`Valid: YES`). Ready to trigger fresh validation run.
 - Created central handoff file at `Keonix/_ops/handoffs/2026-11-11-cdc-lakehouse-handoff.md`.
 
+### 2026-11-11 (later) — Push done, fresh run blocked by disabled Lakebase compute
+
+- Pushed `main` to `origin` (`03d3ae0..be6837e`) after a clean secret/attribution scan.
+- `--var="source_tables=a,b"` fails ("unexpected flag value"): the comma is parsed as a separator. Use `BUNDLE_VAR_source_tables='public.customers,public.orders'` as the env var instead.
+- Run `840677114639866` failed in `extract_and_merge` with `FAILED_JDBC.CONNECTION`. Cause: Lakebase endpoint `projects/olist-cdc-source/branches/production/endpoints/primary` has `disabled: true`, state `IDLE`, last active 2026-10-28.
+- Laurence's manual run earlier the same day (`400289081250722`) failed with the same error, confirming the cause.
+- Fix applied with Laurence's approval: `databricks postgres update-endpoint projects/olist-cdc-source/branches/production/endpoints/primary spec.disabled --json '{"spec":{"disabled":false}}' --profile cdc-dev`.
+- Rerun `133024077519828` (2026-11-11 ~17:00 local) TERMINATED SUCCESS in ~1 min: customers 3 rows, orders 1 row extracted via the overlap window. Verified through the SQL warehouse: bronze customers 3 rows/3 distinct, bronze orders 4 rows/3 distinct, silver 3 and 3 (replay deduplicated by hash); watermarks unchanged since no source changes; `cdc_watermarks` updated today. dbt not rerun (local `.venv` no longer exists; recreate before running `dbt build`).
+- Lakebase endpoints can end up disabled when idle: re-check `disabled` before any run after a long gap.
+
 ### Next actions (start here)
 
-1. Push `main` to GitHub: `git push origin main`.
-2. Run fresh verification run via DAB:
-   `databricks bundle run olist_cdc_job --target dev --profile cdc-dev --var="postgres_secret_scope=olist_cdc" --var="catalog=workspace" --var="schema=olist_cdc_dev" --var="source_tables=public.customers,public.orders"`
+1. Update `README.md` with enriched Mermaid diagram and badges (on an `agent/` branch, not main).
+2. Publish CDC LinkedIn post (Week 1).
 3. Update `README.md` with enriched Mermaid diagram and badges.
 4. Publish CDC LinkedIn post (Week 1).
 
