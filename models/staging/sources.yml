@@ -2,8 +2,8 @@ version: 2
 
 sources:
   - name: bronze
-    database: workspace
-    schema: olist_cdc_dev
+    database: "{{ var('catalog', 'workspace') }}"
+    schema: "{{ var('schema', 'olist_cdc_dev') }}"
     tables:
       - name: bronze_public_customers
         description: "Append-only CDC bronze stream for PostgreSQL public.customers"
