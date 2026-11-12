@@ -1,6 +1,32 @@
 # Olist CDC on Databricks
 
-An idempotent, watermark-based CDC pipeline that extracts PostgreSQL order-lifecycle changes into Unity Catalog Delta tables. It is deployed as a Databricks Declarative Automation Bundle (DAB) and intentionally uses a small overlap window (`updated_at >= watermark`) so boundary records are replayed safely.
+![Databricks](https://img.shields.io/badge/Databricks-Asset%20Bundles-FF3621?logo=databricks&logoColor=white)
+![Delta Lake](https://img.shields.io/badge/Delta%20Lake-MERGE-00ADD4)
+![dbt](https://img.shields.io/badge/dbt-databricks-FF694B?logo=dbt&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+
+An idempotent, watermark-based CDC pipeline that extracts PostgreSQL order-lifecycle changes into Unity Catalog Delta tables. It is deployed as a Databricks Declarative Automation Bundle (DAB) and intentionally uses a small overlap window (`updated_at >= watermark - 5 minutes`) so boundary records are replayed safely.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    PG[("PostgreSQL / Lakebase<br/>public.customers, public.orders<br/>updated_at")]
+    subgraph JOB["Databricks Asset Bundle: serverless job (cdc-run)"]
+        direction TB
+        EX["Extract<br/>updated_at >= watermark - 5 min"]
+        HASH["SHA-256 row hash<br/>_cdc_record_hash"]
+        WM[("cdc_watermarks<br/>control table")]
+        EX --> HASH
+        WM -. read .-> EX
+    end
+    BR[("Bronze Delta<br/>MERGE on record hash<br/>change history")]
+    SV[("Silver Delta (dbt)<br/>ROW_NUMBER latest per key<br/>current state")]
+    PG --> EX
+    HASH --> BR
+    BR -. advance after successful merge .-> WM
+    BR --> SV
+```
 
 ## What is implemented
 
