@@ -87,12 +87,17 @@ The silver layer transforms and conforms these streams into clean, current-state
    ```
    Filtering on `_row_num = 1` guarantees exactly one row per entity representing its latest state. The `_cdc_ingested_at` column acts as an immutable tiebreaker for updates arriving with identical timestamps.
 2. **Delta Lake Storage:** Silver models materialise as native Delta tables in Unity Catalog (`workspace.olist_cdc_dev`), providing ACID transactions, time travel, and file compaction.
-3. **Zero-Secret Authentication:** The dbt project authenticates via the Databricks CLI OAuth profile (`cdc-dev`) connecting to the Serverless SQL Warehouse (`<warehouse-id>`). No static credentials, tokens, or passwords exist in repository files.
+3. **Zero-Secret Authentication:** The dbt project authenticates via the Databricks CLI OAuth profile (`cdc-dev`) connecting to a Serverless SQL Warehouse. No static credentials, tokens, or passwords exist in repository files.
 
 ### Running Silver Models
 
 ```bash
-DATABRICKS_CONFIG_PROFILE=cdc-dev .venv/bin/dbt build --profiles-dir .
+# One-time: copy the template and fill in your workspace host and warehouse id
+cp profiles.yml.example profiles.yml
+
+# Build silver models and run the tests; override the bronze location with --vars if needed
+DATABRICKS_CONFIG_PROFILE=cdc-dev .venv/bin/dbt build --profiles-dir . \
+  --vars '{catalog: workspace, schema: olist_cdc_dev}'
 ```
 
 ### Data Quality & Reconciliation Tests
