@@ -1,0 +1,13 @@
+# Copy to profiles.yml (gitignored) and fill in your workspace values.
+# Authentication uses the Databricks CLI OAuth profile; no tokens belong in this file.
+cdc-dev:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: workspace
+      schema: olist_cdc_dev
+      host: <workspace-host>.cloud.databricks.com
+      http_path: /sql/1.0/warehouses/<warehouse-id>
+      auth_type: oauth
+      threads: 4

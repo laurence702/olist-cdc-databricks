@@ -15,9 +15,32 @@ logs/
 .user.yml
 
 
-# Internal agent memory, handoffs and prompt drafts (never push to public repos)
+# Local dbt connection profile (copy from profiles.yml.example)
+profiles.yml
+
+# Internal agent memory
 *CENTRAL_MEMORY*.md
 *HANDOFF*.md
 docs/assets/*prompt*
 scratch/
 docs/social/
+docs/assets/evidence/
+
+# Tools & Local Analysis
+graphify-out/
+
+# Python & testing
+*.py[cod]
+*$py.class
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+Thumbs.db
+
